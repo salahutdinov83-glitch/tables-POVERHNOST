@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Каталог</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
@@ -10,7 +10,8 @@
         
         body { 
             background: #2c3e50; 
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            overflow-x: hidden;
         }
         
         .toolbar {
@@ -23,39 +24,45 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             z-index: 1000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            flex-wrap: wrap;
         }
         
         .toolbar button {
-            padding: 8px 20px;
+            padding: 8px 15px;
             background: #3498db;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            touch-action: manipulation;
         }
         
-        .toolbar button:hover { background: #2980b9; }
+        .toolbar button:hover, .toolbar button:active {
+            background: #2980b9;
+        }
         
         .toolbar span {
             color: white;
             font-size: 14px;
-            min-width: 120px;
+            min-width: 100px;
             text-align: center;
         }
         
         #viewer {
-            margin-top: 60px;
-            padding: 20px;
+            margin-top: 70px;
+            padding: 10px;
             text-align: center;
-            min-height: calc(100vh - 60px);
+            min-height: calc(100vh - 70px);
+            overflow-y: auto;
         }
         
         canvas {
             max-width: 100%;
+            height: auto;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
             margin-bottom: 20px;
             background: white;
@@ -63,8 +70,85 @@
         
         .loading {
             color: white;
-            font-size: 20px;
+            font-size: 18px;
             padding: 50px;
+        }
+        
+        /* МОБИЛЬНЫЕ СТИЛИ */
+        @media (max-width: 768px) {
+            .toolbar {
+                padding: 8px 5px;
+                gap: 5px;
+            }
+            
+            .toolbar button {
+                padding: 10px 12px;
+                font-size: 13px;
+                flex: 1;
+                min-width: 60px;
+            }
+            
+            .toolbar span {
+                font-size: 12px;
+                min-width: 80px;
+                width: 100%;
+                order: -1;
+                margin-bottom: 5px;
+            }
+            
+            #viewer {
+                margin-top: 100px;
+                padding: 5px;
+                min-height: calc(100vh - 100px);
+            }
+            
+            canvas {
+                max-width: 100%;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .toolbar button {
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+            
+            #viewer {
+                margin-top: 90px;
+            }
+        }
+        
+        /* Свайп для мобильных */
+        .swipe-hint {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 999;
+        }
+        
+        @media (max-width: 768px) {
+            .swipe-hint {
+                display: block;
+                animation: fadeOut 3s forwards;
+                animation-delay: 2s;
+            }
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+        
+        /* Полноэкранный режим */
+        .fullscreen-btn {
+            background: #27ae60 !important;
         }
     </style>
 </head>
@@ -73,60 +157,85 @@
         <button onclick="prevPage()">◀ Назад</button>
         <span id="page-num">Загрузка...</span>
         <button onclick="nextPage()">Вперед ▶</button>
-        <button onclick="zoomOut()">− Уменьшить</button>
-        <button onclick="zoomIn()">+ Увеличить</button>
-        <button onclick="downloadPDF()" style="background: #e74c3c;">⬇ Скачать</button>
+        <button onclick="zoomOut()">−</button>
+        <button onclick="zoomIn()">+</button>
+        <button onclick="toggleFullscreen()" class="fullscreen-btn">⛶</button>
+        <button onclick="downloadPDF()" style="background: #e74c3c;">⬇</button>
     </div>
     
     <div id="viewer">
         <div class="loading">Загрузка каталога...</div>
     </div>
+    
+    <div class="swipe-hint">👆 Свайп влево/вправо для перелистывания</div>
 
     <script>
-        // Настройка PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         
-        // ЗАМЕНИТЕ на ваш файл
         const url = 'catalog22_03_26.pdf';
         
         let pdfDoc = null;
         let currentPage = 1;
         let scale = 1.5;
         let totalPages = 0;
+        let isFullscreen = false;
 
-        // Загрузка PDF
+        // Определение мобильного устройства
+        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+        
+        // Автомасштабирование для мобильных
+        if (isMobile) {
+            scale = 0.8;
+        }
+
         pdfjsLib.getDocument(url).promise.then(function(pdf) {
             pdfDoc = pdf;
             totalPages = pdf.numPages;
             renderPage(currentPage);
         }).catch(function(error) {
             document.getElementById('viewer').innerHTML = 
-                '<div class="loading">Ошибка загрузки PDF. <a href="' + url + '" style="color: #3498db;">Попробовать скачать</a></div>';
+                '<div class="loading">Ошибка загрузки. <a href="' + url + '" style="color: #3498db;">Скачать</a></div>';
         });
 
         function renderPage(num) {
             pdfDoc.getPage(num).then(function(page) {
-                const viewport = page.getViewport({ scale: scale });
+                // Автоподбор масштаба для мобильных
+                let viewport = page.getViewport({ scale: 1 });
+                const containerWidth = document.getElementById('viewer').clientWidth - 20;
+                
+                if (isMobile && viewport.width > containerWidth) {
+                    scale = containerWidth / viewport.width;
+                }
+                
+                viewport = page.getViewport({ scale: scale });
+                
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+                // Улучшенное качество для Retina-экранов
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = viewport.width * dpr;
+                canvas.height = viewport.height * dpr;
+                canvas.style.width = viewport.width + 'px';
+                canvas.style.height = viewport.height + 'px';
                 
-                // Очистка и добавление canvas
+                ctx.scale(dpr, dpr);
+                
                 const viewer = document.getElementById('viewer');
                 viewer.innerHTML = '';
                 viewer.appendChild(canvas);
                 
-                // Рендеринг страницы
                 page.render({
                     canvasContext: ctx,
-                    viewport: viewport
+                    viewport: viewport,
+                    transform: [dpr, 0, 0, dpr, 0, 0]
                 });
                 
-                // Обновление счетчика
                 document.getElementById('page-num').textContent = 
-                    'Страница ' + num + ' из ' + totalPages;
+                    num + ' / ' + totalPages;
+                
+                // Прокрутка вверх при смене страницы
+                window.scrollTo(0, 0);
             });
         }
 
@@ -143,13 +252,13 @@
         }
 
         function zoomIn() {
-            scale += 0.25;
+            scale += 0.2;
             renderPage(currentPage);
         }
 
         function zoomOut() {
-            if (scale <= 0.5) return;
-            scale -= 0.25;
+            if (scale <= 0.3) return;
+            scale -= 0.2;
             renderPage(currentPage);
         }
 
@@ -160,10 +269,65 @@
             link.click();
         }
 
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                isFullscreen = true;
+            } else {
+                document.exitFullscreen();
+                isFullscreen = false;
+            }
+        }
+
         // Клавиатурная навигация
         document.addEventListener('keydown', function(e) {
             if (e.key === 'ArrowLeft') prevPage();
             if (e.key === 'ArrowRight') nextPage();
+        });
+
+        // СВАЙПЫ для мобильных
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextPage(); // Свайп влево — вперед
+                } else {
+                    prevPage(); // Свайп вправо — назад
+                }
+            }
+        }
+
+        // Обработка изменения ориентации
+        window.addEventListener('orientationchange', function() {
+            setTimeout(function() {
+                renderPage(currentPage);
+            }, 300);
+        });
+
+        // Обработка ресайза
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                const newIsMobile = window.matchMedia('(max-width: 768px)').matches;
+                if (newIsMobile !== isMobile) {
+                    location.reload();
+                }
+            }, 250);
         });
     </script>
 </body>
