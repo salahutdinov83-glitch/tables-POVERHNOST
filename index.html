@@ -71,7 +71,8 @@
             background: white;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
             max-width: 100%;
-            display: none; /* Скрыто до загрузки */
+            display: none;
+            line-height: 0; /* Убираем отступ под canvas */
         }
         
         #page-container.loaded {
@@ -81,7 +82,9 @@
         canvas {
             display: block;
             max-width: 100%;
-            height: auto;
+            /* Убираем height: auto чтобы не было растягивания */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
         
         .loading {
@@ -131,7 +134,7 @@
             z-index: 999;
             animation: fadeOut 3s forwards;
             animation-delay: 2s;
-            display: none; /* Покажем после загрузки */
+            display: none;
         }
         
         .swipe-hint.visible {
@@ -142,7 +145,6 @@
             to { opacity: 0; visibility: hidden; }
         }
         
-        /* Панель контактов */
         .contact-bar {
             position: fixed;
             bottom: 0;
@@ -244,7 +246,6 @@
     </div>
 
     <script>
-        // Проверка загрузки PDF.js
         if (typeof pdfjsLib === 'undefined') {
             document.getElementById('loading').innerHTML = 
                 '<div class="error">Ошибка загрузки библиотеки<br><a href="catalog22_03_26.pdf">Открыть PDF напрямую</a></div>';
@@ -263,15 +264,13 @@
         let pageHeight = 0;
         let isLoading = true;
 
-        // Загрузка PDF с таймаутом
         const loadingTimeout = setTimeout(function() {
             if (isLoading) {
                 document.getElementById('loading').innerHTML = 
                     '<div class="error">Загрузка занимает слишком много времени<br><a href="catalog22_03_26.pdf">Открыть PDF напрямую</a></div>';
             }
-        }, 15000); // 15 секунд таймаут
+        }, 15000);
 
-        // Загрузка документа
         const loadingTask = pdfjsLib.getDocument(url);
         
         loadingTask.promise.then(function(pdf) {
@@ -281,7 +280,6 @@
             pdfDoc = pdf;
             totalPages = pdf.numPages;
             
-            // Получаем размеры первой страницы
             return pdf.getPage(1);
             
         }).then(function(page) {
@@ -289,18 +287,15 @@
             pageWidth = viewport.width;
             pageHeight = viewport.height;
             
-            // Скрываем загрузку, показываем контейнер
             document.getElementById('loading').style.display = 'none';
             document.getElementById('page-container').classList.add('loaded');
             document.getElementById('hint').classList.add('visible');
             
-            // Включаем кнопки
             document.getElementById('btn-prev').disabled = false;
             document.getElementById('btn-next').disabled = false;
             document.getElementById('btn-width').disabled = false;
             document.getElementById('btn-page').disabled = false;
             
-            // Первый рендер
             fitWidth();
             
         }).catch(function(error) {
@@ -324,15 +319,24 @@
 
         function fitWidth() {
             if (!pdfDoc) return;
+            
+            const dpr = window.devicePixelRatio || 1;
             const viewerWidth = document.getElementById('viewer').clientWidth - 20;
-            scale = Math.max(0.3, viewerWidth / pageWidth);
+            
+            // Масштаб с учетом DPR для четкости
+            scale = (viewerWidth / pageWidth) * dpr;
+            
             renderPage(currentPage);
         }
 
         function fitPage() {
             if (!pdfDoc) return;
+            
+            const dpr = window.devicePixelRatio || 1;
             const viewerHeight = document.getElementById('viewer').clientHeight - 20;
-            scale = Math.max(0.3, viewerHeight / pageHeight);
+            
+            scale = (viewerHeight / pageHeight) * dpr;
+            
             renderPage(currentPage);
         }
 
@@ -340,18 +344,25 @@
             if (!pdfDoc) return;
             
             pdfDoc.getPage(num).then(function(page) {
+                // Создаем viewport с текущим масштабом
                 const viewport = page.getViewport({ scale: scale });
                 
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
+                // Физические пиксели canvas (с учетом масштаба)
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
                 
-                canvas.style.width = viewport.width + 'px';
-                canvas.style.height = viewport.height + 'px';
+                // CSS размеры = логические пиксели (делим на DPR)
+                const dpr = window.devicePixelRatio || 1;
+                canvas.style.width = (viewport.width / dpr) + 'px';
+                canvas.style.height = (viewport.height / dpr) + 'px';
                 
-                // Рендеринг с обработкой ошибок
+                // Включаем сглаживание для четкости
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
                 const renderTask = page.render({
                     canvasContext: ctx,
                     viewport: viewport
@@ -365,7 +376,6 @@
                     document.getElementById('page-num').textContent = 
                         num + ' / ' + totalPages;
                     
-                    // Обновляем состояние кнопок
                     document.getElementById('btn-prev').disabled = (num <= 1);
                     document.getElementById('btn-next').disabled = (num >= totalPages);
                 }).catch(function(error) {
@@ -393,13 +403,11 @@
             if (hint) hint.style.display = 'none';
         }
 
-        // Клавиатурная навигация
         document.addEventListener('keydown', function(e) {
             if (e.key === 'ArrowLeft') prevPage();
             if (e.key === 'ArrowRight') nextPage();
         });
 
-        // Свайпы
         let touchStartX = 0;
         let touchStartY = 0;
 
@@ -424,7 +432,6 @@
             }
         }, { passive: true });
 
-        // Поворот экрана
         window.addEventListener('orientationchange', function() {
             if (pdfDoc) {
                 setTimeout(fitWidth, 300);
