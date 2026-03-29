@@ -8,11 +8,11 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        body { 
+        html, body { 
+            height: 100%;
             background: #2c3e50; 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            overflow-x: hidden;
-            touch-action: pan-y;
+            overflow: hidden;
         }
         
         .toolbar {
@@ -20,173 +20,234 @@
             top: 0;
             left: 0;
             right: 0;
+            height: 50px;
             background: #34495e;
-            padding: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             z-index: 1000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         
         .toolbar button {
-            padding: 8px 15px;
+            padding: 8px 12px;
             background: #3498db;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
         }
         
         .toolbar button:active {
             background: #2980b9;
-            transform: scale(0.95);
         }
         
         .toolbar span {
             color: white;
-            font-size: 14px;
-            min-width: 100px;
+            font-size: 13px;
+            min-width: 80px;
             text-align: center;
         }
         
         #viewer {
-            margin-top: 60px;
+            position: fixed;
+            top: 50px;
+            left: 0;
+            right: 0;
+            bottom: 70px;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
             padding: 10px;
-            text-align: center;
-            min-height: calc(100vh - 60px);
-            overflow-x: hidden;
+        }
+        
+        #page-container {
+            background: white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            max-width: 100%;
         }
         
         canvas {
+            display: block;
             max-width: 100%;
             height: auto;
-            display: block;
-            margin: 0 auto 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            background: white;
         }
         
         .loading {
             color: white;
             font-size: 18px;
             padding: 50px;
+            text-align: center;
         }
         
         .swipe-hint {
             position: fixed;
-            bottom: 30px;
+            bottom: 90px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.8);
             color: white;
-            padding: 12px 25px;
-            border-radius: 25px;
+            padding: 10px 20px;
+            border-radius: 20px;
             font-size: 14px;
             z-index: 999;
-            animation: fadeOut 4s forwards;
-            animation-delay: 3s;
+            animation: fadeOut 3s forwards;
+            animation-delay: 2s;
         }
         
         @keyframes fadeOut {
             to { opacity: 0; visibility: hidden; }
         }
         
-        /* Мобильные стили */
-        @media (max-width: 768px) {
-            .toolbar {
-                padding: 8px 5px;
-                gap: 5px;
-                flex-wrap: wrap;
-            }
-            
-            .toolbar button {
-                padding: 10px 15px;
-                font-size: 13px;
-            }
-            
-            #viewer {
-                margin-top: 70px;
-                padding: 5px;
-            }
-            
-            canvas {
-                max-width: 100vw;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            }
+        /* Панель контактов */
+        .contact-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            padding: 0 10px;
+        }
+        
+        .contact-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #333;
+            font-size: 12px;
+            gap: 5px;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        
+        .contact-btn:active {
+            background: #f0f0f0;
+        }
+        
+        .contact-btn svg {
+            width: 28px;
+            height: 28px;
+        }
+        
+        .contact-btn.phone svg {
+            fill: #27ae60;
+        }
+        
+        .contact-btn.max svg {
+            fill: #6b4ee6;
+        }
+        
+        .contact-btn.download svg {
+            fill: #e74c3c;
         }
         
         @media (max-width: 480px) {
             .toolbar button {
-                padding: 8px 12px;
+                padding: 6px 10px;
                 font-size: 12px;
             }
             
             #viewer {
-                margin-top: 65px;
+                padding: 5px;
+                bottom: 70px;
+            }
+            
+            .contact-btn {
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+            
+            .contact-btn svg {
+                width: 24px;
+                height: 24px;
             }
         }
     </style>
 </head>
 <body>
     <div class="toolbar">
-        <button onclick="prevPage()">◀ Назад</button>
-        <span id="page-num">Загрузка...</span>
-        <button onclick="nextPage()">Вперед ▶</button>
-        <button onclick="zoomOut()">−</button>
-        <button onclick="zoomIn()">+</button>
-        <button onclick="downloadPDF()" style="background: #e74c3c;">⬇</button>
+        <button onclick="prevPage()">◀</button>
+        <span id="page-num">...</span>
+        <button onclick="nextPage()">▶</button>
+        <button onclick="fitWidth()">↔ Ширина</button>
+        <button onclick="fitPage()">↕ Страница</button>
     </div>
     
     <div id="viewer">
-        <div class="loading">Загрузка каталога...</div>
+        <div class="loading">Загрузка...</div>
     </div>
     
     <div class="swipe-hint" id="hint">👆 Листайте влево/вправо</div>
+    
+    <!-- Панель контактов -->
+    <div class="contact-bar">
+        <a href="tel:+79029786302" class="contact-btn phone">
+            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            <span>Позвонить</span>
+        </a>
+        
+        <a href="https://max.ru/u/f9LHodD0cOJf3kkkt5dMntez-ZvEKQ5bZ6oC9EbxYuW61STx-ngHvdDB08A?text=Привет!%20мне%20нужен%20расчёт%20стоимости" target="_blank" class="contact-btn max">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+            <span>Написать в MAX</span>
+        </a>
+        
+        <a href="каталог.pdf" download class="contact-btn download">
+            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            <span>Скачать PDF</span>
+        </a>
+    </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         
-        const url = 'catalog22_03_26.pdf';
+        const url = 'каталог.pdf';
         
         let pdfDoc = null;
         let currentPage = 1;
-        let scale = 1.5;
         let totalPages = 0;
-        let baseScale = 1.5;
+        let scale = 1;
+        let pageWidth = 0;
+        let pageHeight = 0;
 
-        // Загрузка PDF
         pdfjsLib.getDocument(url).promise.then(function(pdf) {
             pdfDoc = pdf;
             totalPages = pdf.numPages;
-            updateScale();
-            renderPage(currentPage);
+            
+            pdf.getPage(1).then(function(page) {
+                const viewport = page.getViewport({ scale: 1 });
+                pageWidth = viewport.width;
+                pageHeight = viewport.height;
+                fitWidth();
+            });
         }).catch(function(error) {
             document.getElementById('viewer').innerHTML = 
-                '<div class="loading">Ошибка загрузки. <a href="' + url + '" style="color: #3498db;">Скачать</a></div>';
+                '<div class="loading">Ошибка. <a href="' + url + '" style="color: #3498db;">Скачать</a></div>';
         });
 
-        // Функция определения масштаба по ширине экрана
-        function updateScale() {
-            const viewerWidth = window.innerWidth - 20;
-            // Предполагаем ширину страницы PDF ~600pt при scale=1
-            const pageWidth = 600;
-            const newScale = viewerWidth / pageWidth;
-            
-            // Ограничения масштаба
-            if (newScale < 0.5) {
-                baseScale = 0.5;
-            } else if (newScale > 2) {
-                baseScale = 2;
-            } else {
-                baseScale = newScale;
-            }
-            
-            scale = baseScale;
+        function fitWidth() {
+            const viewerWidth = document.getElementById('viewer').clientWidth - 20;
+            scale = viewerWidth / pageWidth;
+            renderPage(currentPage);
+        }
+
+        function fitPage() {
+            const viewerHeight = document.getElementById('viewer').clientHeight - 20;
+            scale = viewerHeight / pageHeight;
+            renderPage(currentPage);
         }
 
         function renderPage(num) {
@@ -196,23 +257,24 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Поддержка Retina
-                const dpr = window.devicePixelRatio || 1;
-                canvas.width = viewport.width * dpr;
-                canvas.height = viewport.height * dpr;
-                canvas.style.width = Math.floor(viewport.width) + 'px';
-                canvas.style.height = Math.floor(viewport.height) + 'px';
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
                 
-                ctx.scale(dpr, dpr);
-                
-                const viewer = document.getElementById('viewer');
-                viewer.innerHTML = '';
-                viewer.appendChild(canvas);
+                canvas.style.width = viewport.width + 'px';
+                canvas.style.height = viewport.height + 'px';
                 
                 page.render({
                     canvasContext: ctx,
                     viewport: viewport
                 });
+                
+                const viewer = document.getElementById('viewer');
+                viewer.innerHTML = '';
+                
+                const container = document.createElement('div');
+                container.id = 'page-container';
+                container.appendChild(canvas);
+                viewer.appendChild(container);
                 
                 document.getElementById('page-num').textContent = 
                     num + ' / ' + totalPages;
@@ -233,83 +295,42 @@
             hideHint();
         }
 
-        function zoomIn() {
-            scale += 0.2;
-            renderPage(currentPage);
-        }
-
-        function zoomOut() {
-            if (scale <= 0.3) return;
-            scale -= 0.2;
-            renderPage(currentPage);
-        }
-
-        function downloadPDF() {
-            window.open(url, '_blank');
-        }
-
         function hideHint() {
             const hint = document.getElementById('hint');
             if (hint) hint.style.display = 'none';
         }
 
-        // Клавиатура
         document.addEventListener('keydown', function(e) {
             if (e.key === 'ArrowLeft') prevPage();
             if (e.key === 'ArrowRight') nextPage();
         });
 
-        // СВАЙПЫ - исправленная версия
         let touchStartX = 0;
         let touchStartY = 0;
-        let touchEndX = 0;
-        let touchStartTime = 0;
 
-        const viewer = document.getElementById('viewer');
-        
-        // Обработчик на document для всего экрана
         document.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-            touchStartTime = new Date().getTime();
+            touchStartX = e.touches[0].screenX;
+            touchStartY = e.touches[0].screenY;
         }, { passive: true });
 
         document.addEventListener('touchend', function(e) {
-            touchEndX = e.changedTouches[0].screenX;
+            const touchEndX = e.changedTouches[0].screenX;
             const touchEndY = e.changedTouches[0].screenY;
-            const touchEndTime = new Date().getTime();
             
             const deltaX = touchStartX - touchEndX;
             const deltaY = touchStartY - touchEndY;
-            const deltaTime = touchEndTime - touchStartTime;
             
-            // Проверяем что это горизонтальный свайп, а не вертикальный скролл
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50 && deltaTime < 300) {
-                e.preventDefault();
-                if (deltaX > 0) {
-                    nextPage(); // Свайп влево
-                } else {
-                    prevPage(); // Свайп вправо
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+                if (deltaX > 50) {
+                    nextPage();
+                } else if (deltaX < -50) {
+                    prevPage();
                 }
             }
-        }, { passive: false });
+        }, { passive: true });
 
-        // Обновление масштаба при повороте/ресайзе
-        let resizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function() {
-                updateScale();
-                renderPage(currentPage);
-            }, 200);
-        });
-
-        // Поворот экрана
         window.addEventListener('orientationchange', function() {
-            setTimeout(function() {
-                updateScale();
-                renderPage(currentPage);
-            }, 300);
+            setTimeout(fitWidth, 300);
         });
     </script>
 </body>
