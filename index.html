@@ -3,82 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог продукции</title>
+    <title>Каталог</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        body {
+        body { 
+            background: #2c3e50; 
             font-family: Arial, sans-serif;
-            background: #f0f0f0;
         }
         
-        /* Шапка */
-        .header {
-            background: #333;
+        .toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #34495e;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .toolbar button {
+            padding: 8px 20px;
+            background: #3498db;
             color: white;
-            padding: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .toolbar button:hover { background: #2980b9; }
+        
+        .toolbar span {
+            color: white;
+            font-size: 14px;
+            min-width: 120px;
             text-align: center;
         }
         
-        /* Контейнер для PDF */
-        .pdf-container {
-            width: 100%;
-            height: calc(100vh - 80px);
-            background: #525659;
+        #viewer {
+            margin-top: 60px;
+            padding: 20px;
+            text-align: center;
+            min-height: calc(100vh - 60px);
         }
         
-        /* Полноэкранный просмотр */
-        .pdf-viewer {
-            width: 100%;
-            height: 100%;
-            border: none;
+        canvas {
+            max-width: 100%;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            background: white;
         }
         
-        /* Кнопка скачивания */
-        .download-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #ff6b6b;
+        .loading {
             color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        
-        .download-btn:hover {
-            background: #ff5252;
+            font-size: 20px;
+            padding: 50px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Каталог продукции 2025</h1>
+    <div class="toolbar">
+        <button onclick="prevPage()">◀ Назад</button>
+        <span id="page-num">Загрузка...</span>
+        <button onclick="nextPage()">Вперед ▶</button>
+        <button onclick="zoomOut()">− Уменьшить</button>
+        <button onclick="zoomIn()">+ Увеличить</button>
+        <button onclick="downloadPDF()" style="background: #e74c3c;">⬇ Скачать</button>
     </div>
     
-    <!-- Кнопка скачать -->
-    <a href="catalog22_03_26.pdf" download class="download-btn">⬇ Скачать PDF</a>
-    
-    <!-- Встроенный просмотрщик PDF -->
-    <div class="pdf-container">
-        <iframe 
-            src="catalog22_03_26.pdf#toolbar=1&navpanes=1" 
-            class="pdf-viewer"
-            type="application/pdf">
-        </iframe>
+    <div id="viewer">
+        <div class="loading">Загрузка каталога...</div>
     </div>
-    
-    <!-- Fallback для старых браузеров -->
-    <noscript>
-        <p style="text-align: center; padding: 50px;">
-            Ваш браузер не поддерживает просмотр PDF. 
-            <a href="catalog22_03_26.pdf">Скачайте файл</a>
-        </p>
-    </noscript>
+
+    <script>
+        // Настройка PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        // ЗАМЕНИТЕ на ваш файл
+        const url = 'catalog22_03_26.pdf';
+        
+        let pdfDoc = null;
+        let currentPage = 1;
+        let scale = 1.5;
+        let totalPages = 0;
+
+        // Загрузка PDF
+        pdfjsLib.getDocument(url).promise.then(function(pdf) {
+            pdfDoc = pdf;
+            totalPages = pdf.numPages;
+            renderPage(currentPage);
+        }).catch(function(error) {
+            document.getElementById('viewer').innerHTML = 
+                '<div class="loading">Ошибка загрузки PDF. <a href="' + url + '" style="color: #3498db;">Попробовать скачать</a></div>';
+        });
+
+        function renderPage(num) {
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({ scale: scale });
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                // Очистка и добавление canvas
+                const viewer = document.getElementById('viewer');
+                viewer.innerHTML = '';
+                viewer.appendChild(canvas);
+                
+                // Рендеринг страницы
+                page.render({
+                    canvasContext: ctx,
+                    viewport: viewport
+                });
+                
+                // Обновление счетчика
+                document.getElementById('page-num').textContent = 
+                    'Страница ' + num + ' из ' + totalPages;
+            });
+        }
+
+        function prevPage() {
+            if (currentPage <= 1) return;
+            currentPage--;
+            renderPage(currentPage);
+        }
+
+        function nextPage() {
+            if (currentPage >= totalPages) return;
+            currentPage++;
+            renderPage(currentPage);
+        }
+
+        function zoomIn() {
+            scale += 0.25;
+            renderPage(currentPage);
+        }
+
+        function zoomOut() {
+            if (scale <= 0.5) return;
+            scale -= 0.25;
+            renderPage(currentPage);
+        }
+
+        function downloadPDF() {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'catalog22_03_26.pdf';
+            link.click();
+        }
+
+        // Клавиатурная навигация
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') prevPage();
+            if (e.key === 'ArrowRight') nextPage();
+        });
+    </script>
 </body>
 </html>
