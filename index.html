@@ -41,8 +41,9 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        .toolbar button:active {
-            background: #2980b9;
+        .toolbar button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
         }
         
         .toolbar span {
@@ -62,7 +63,7 @@
             -webkit-overflow-scrolling: touch;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             padding: 10px;
         }
         
@@ -70,6 +71,11 @@
             background: white;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
             max-width: 100%;
+            display: none; /* Скрыто до загрузки */
+        }
+        
+        #page-container.loaded {
+            display: block;
         }
         
         canvas {
@@ -81,8 +87,35 @@
         .loading {
             color: white;
             font-size: 18px;
-            padding: 50px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .error a {
+            color: #3498db;
+            text-decoration: underline;
         }
         
         .swipe-hint {
@@ -98,6 +131,11 @@
             z-index: 999;
             animation: fadeOut 3s forwards;
             animation-delay: 2s;
+            display: none; /* Покажем после загрузки */
+        }
+        
+        .swipe-hint.visible {
+            display: block;
         }
         
         @keyframes fadeOut {
@@ -143,17 +181,9 @@
             height: 28px;
         }
         
-        .contact-btn.phone svg {
-            fill: #27ae60;
-        }
-        
-        .contact-btn.max svg {
-            fill: #6b4ee6;
-        }
-        
-        .contact-btn.download svg {
-            fill: #e74c3c;
-        }
+        .contact-btn.phone svg { fill: #27ae60; }
+        .contact-btn.max svg { fill: #6b4ee6; }
+        .contact-btn.download svg { fill: #e74c3c; }
         
         @media (max-width: 480px) {
             .toolbar button {
@@ -163,12 +193,11 @@
             
             #viewer {
                 padding: 5px;
-                bottom: 70px;
             }
             
             .contact-btn {
                 font-size: 11px;
-                padding: 8px 12px;
+                padding: 8px 10px;
             }
             
             .contact-btn svg {
@@ -177,24 +206,26 @@
             }
         }
     </style>
-<base target="_blank">
 </head>
 <body>
     <div class="toolbar">
-        <button onclick="prevPage()">◀</button>
-        <span id="page-num">...</span>
-        <button onclick="nextPage()">▶</button>
-        <button onclick="fitWidth()">↔ Ширина</button>
-        <button onclick="fitPage()">↕ Страница</button>
+        <button onclick="prevPage()" id="btn-prev" disabled>◀</button>
+        <span id="page-num">Загрузка...</span>
+        <button onclick="nextPage()" id="btn-next" disabled>▶</button>
+        <button onclick="fitWidth()" id="btn-width" disabled>↔ Ширина</button>
+        <button onclick="fitPage()" id="btn-page" disabled>↕ Страница</button>
     </div>
     
     <div id="viewer">
-        <div class="loading">Загрузка...</div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>Загрузка каталога...</div>
+        </div>
+        <div id="page-container"></div>
     </div>
     
     <div class="swipe-hint" id="hint">👆 Листайте влево/вправо</div>
     
-    <!-- Панель контактов -->
     <div class="contact-bar">
         <a href="tel:+79029786302" class="contact-btn phone">
             <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
@@ -213,6 +244,13 @@
     </div>
 
     <script>
+        // Проверка загрузки PDF.js
+        if (typeof pdfjsLib === 'undefined') {
+            document.getElementById('loading').innerHTML = 
+                '<div class="error">Ошибка загрузки библиотеки<br><a href="catalog22_03_26.pdf">Открыть PDF напрямую</a></div>';
+            throw new Error('PDF.js не загружен');
+        }
+        
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         
         const url = 'catalog22_03_26.pdf';
@@ -223,35 +261,84 @@
         let scale = 1;
         let pageWidth = 0;
         let pageHeight = 0;
+        let isLoading = true;
 
-        pdfjsLib.getDocument(url).promise.then(function(pdf) {
+        // Загрузка PDF с таймаутом
+        const loadingTimeout = setTimeout(function() {
+            if (isLoading) {
+                document.getElementById('loading').innerHTML = 
+                    '<div class="error">Загрузка занимает слишком много времени<br><a href="catalog22_03_26.pdf">Открыть PDF напрямую</a></div>';
+            }
+        }, 15000); // 15 секунд таймаут
+
+        // Загрузка документа
+        const loadingTask = pdfjsLib.getDocument(url);
+        
+        loadingTask.promise.then(function(pdf) {
+            clearTimeout(loadingTimeout);
+            isLoading = false;
+            
             pdfDoc = pdf;
             totalPages = pdf.numPages;
             
-            pdf.getPage(1).then(function(page) {
-                const viewport = page.getViewport({ scale: 1 });
-                pageWidth = viewport.width;
-                pageHeight = viewport.height;
-                fitWidth();
-            });
+            // Получаем размеры первой страницы
+            return pdf.getPage(1);
+            
+        }).then(function(page) {
+            const viewport = page.getViewport({ scale: 1 });
+            pageWidth = viewport.width;
+            pageHeight = viewport.height;
+            
+            // Скрываем загрузку, показываем контейнер
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('page-container').classList.add('loaded');
+            document.getElementById('hint').classList.add('visible');
+            
+            // Включаем кнопки
+            document.getElementById('btn-prev').disabled = false;
+            document.getElementById('btn-next').disabled = false;
+            document.getElementById('btn-width').disabled = false;
+            document.getElementById('btn-page').disabled = false;
+            
+            // Первый рендер
+            fitWidth();
+            
         }).catch(function(error) {
-            document.getElementById('viewer').innerHTML = 
-                '<div class="loading">Ошибка. <a href="' + url + '" style="color: #3498db;">Скачать</a></div>';
+            clearTimeout(loadingTimeout);
+            isLoading = false;
+            
+            console.error('Ошибка загрузки PDF:', error);
+            
+            let errorMsg = 'Ошибка загрузки каталога';
+            if (error.name === 'MissingPDFException') {
+                errorMsg = 'Файл не найден. Проверьте имя файла.';
+            } else if (error.name === 'InvalidPDFException') {
+                errorMsg = 'Файл поврежден или не является PDF';
+            } else if (error.message && error.message.includes('network')) {
+                errorMsg = 'Ошибка сети. Проверьте интернет-соединение';
+            }
+            
+            document.getElementById('loading').innerHTML = 
+                '<div class="error">' + errorMsg + '<br><br><a href="' + url + '">Попробовать открыть напрямую</a><br><br><small>' + error.message + '</small></div>';
         });
 
         function fitWidth() {
+            if (!pdfDoc) return;
             const viewerWidth = document.getElementById('viewer').clientWidth - 20;
-            scale = viewerWidth / pageWidth;
+            scale = Math.max(0.3, viewerWidth / pageWidth);
             renderPage(currentPage);
         }
 
         function fitPage() {
+            if (!pdfDoc) return;
             const viewerHeight = document.getElementById('viewer').clientHeight - 20;
-            scale = viewerHeight / pageHeight;
+            scale = Math.max(0.3, viewerHeight / pageHeight);
             renderPage(currentPage);
         }
 
         function renderPage(num) {
+            if (!pdfDoc) return;
+            
             pdfDoc.getPage(num).then(function(page) {
                 const viewport = page.getViewport({ scale: scale });
                 
@@ -264,33 +351,38 @@
                 canvas.style.width = viewport.width + 'px';
                 canvas.style.height = viewport.height + 'px';
                 
-                page.render({
+                // Рендеринг с обработкой ошибок
+                const renderTask = page.render({
                     canvasContext: ctx,
                     viewport: viewport
                 });
                 
-                const viewer = document.getElementById('viewer');
-                viewer.innerHTML = '';
-                
-                const container = document.createElement('div');
-                container.id = 'page-container';
-                container.appendChild(canvas);
-                viewer.appendChild(container);
-                
-                document.getElementById('page-num').textContent = 
-                    num + ' / ' + totalPages;
+                renderTask.promise.then(function() {
+                    const container = document.getElementById('page-container');
+                    container.innerHTML = '';
+                    container.appendChild(canvas);
+                    
+                    document.getElementById('page-num').textContent = 
+                        num + ' / ' + totalPages;
+                    
+                    // Обновляем состояние кнопок
+                    document.getElementById('btn-prev').disabled = (num <= 1);
+                    document.getElementById('btn-next').disabled = (num >= totalPages);
+                }).catch(function(error) {
+                    console.error('Ошибка рендеринга:', error);
+                });
             });
         }
 
         function prevPage() {
-            if (currentPage <= 1) return;
+            if (currentPage <= 1 || !pdfDoc) return;
             currentPage--;
             renderPage(currentPage);
             hideHint();
         }
 
         function nextPage() {
-            if (currentPage >= totalPages) return;
+            if (currentPage >= totalPages || !pdfDoc) return;
             currentPage++;
             renderPage(currentPage);
             hideHint();
@@ -301,11 +393,13 @@
             if (hint) hint.style.display = 'none';
         }
 
+        // Клавиатурная навигация
         document.addEventListener('keydown', function(e) {
             if (e.key === 'ArrowLeft') prevPage();
             if (e.key === 'ArrowRight') nextPage();
         });
 
+        // Свайпы
         let touchStartX = 0;
         let touchStartY = 0;
 
@@ -330,8 +424,11 @@
             }
         }, { passive: true });
 
+        // Поворот экрана
         window.addEventListener('orientationchange', function() {
-            setTimeout(fitWidth, 300);
+            if (pdfDoc) {
+                setTimeout(fitWidth, 300);
+            }
         });
     </script>
 </body>
