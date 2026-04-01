@@ -3,444 +3,1889 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Каталог</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <title>ПОВЕРХНОСТЬ — Каталог столов 2026</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        html, body { 
-            height: 100%;
-            background: #2c3e50; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            overflow: hidden;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        .toolbar {
+        :root {
+            --primary: #9D774D;
+            --secondary: #A68866;
+            --dark: #1a1a1a;
+            --darker: #0f0f0f;
+            --light: #fafafa;
+            --gray: #f0f0f0;
+            --text-dark: #2c3e50;
+            --text-muted: #666;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--light);
+            color: var(--text-dark);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        
+        /* Навигация */
+        .nav {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 50px;
-            background: #34495e;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-        
-        .toolbar button {
-            padding: 8px 12px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .toolbar button:disabled {
-            background: #7f8c8d;
-            cursor: not-allowed;
-        }
-        
-        .toolbar span {
-            color: white;
-            font-size: 13px;
-            min-width: 80px;
-            text-align: center;
-        }
-        
-        #viewer {
-            position: fixed;
-            top: 50px;
-            left: 0;
-            right: 0;
-            bottom: 70px;
-            overflow: auto;
-            -webkit-overflow-scrolling: touch;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            padding: 10px;
+            border-bottom: 1px solid rgba(157, 119, 77, 0.15);
         }
         
-        #page-container {
-            background: white;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            max-width: 100%;
-            display: none;
-            line-height: 0;
+        .nav-logo {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
         
-        #page-container.loaded {
-            display: block;
-        }
-        
-        canvas {
-            display: block;
-            max-width: 100%;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-        }
-        
-        .loading {
-            color: white;
-            font-size: 18px;
-            text-align: center;
+        .nav-menu-btn {
+            width: 30px;
+            height: 30px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 15px;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
         }
         
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .nav-menu-btn span {
+            display: block;
+            height: 2px;
+            background: var(--text-dark);
+            transition: 0.3s;
+            border-radius: 2px;
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .nav-menu-btn span:nth-child(1) { width: 100%; }
+        .nav-menu-btn span:nth-child(2) { width: 75%; }
+        .nav-menu-btn span:nth-child(3) { width: 50%; }
+        
+        .nav-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+            width: 100%;
+        }
+        .nav-menu-btn.active span:nth-child(2) { opacity: 0; }
+        .nav-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+            width: 100%;
         }
         
-        .error {
-            color: #e74c3c;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .error a {
-            color: #3498db;
-            text-decoration: underline;
-        }
-        
-        .swipe-hint {
+        .nav-menu {
             position: fixed;
-            bottom: 90px;
+            top: 0;
+            right: -100%;
+            width: 80%;
+            max-width: 300px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 80px 30px;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 999;
+        }
+        
+        .nav-menu.active { right: 0; }
+        
+        .nav-menu a {
+            display: block;
+            color: var(--text-dark);
+            text-decoration: none;
+            padding: 18px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            font-size: 16px;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+        
+        .nav-menu a:hover { color: var(--primary); padding-left: 10px; }
+        
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.3s;
+            z-index: 998;
+        }
+        
+        .overlay.active { opacity: 1; visibility: visible; }
+        
+        /* Секции */
+        section {
+            min-height: 100vh;
+            padding: 100px 25px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Hero - темный */
+        .hero {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+            color: white;
+            text-align: center;
+            padding: 120px 25px 80px;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(157, 119, 77, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(166, 136, 102, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .hero-content { position: relative; z-index: 1; }
+        
+        .hero-subtitle {
+            color: var(--secondary);
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeInUp 0.8s forwards;
+        }
+        
+        .hero-title {
+            font-size: clamp(2.2rem, 8vw, 3.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 25px;
+            background: linear-gradient(135deg, #fff 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            animation: fadeInUp 0.8s 0.2s forwards;
+        }
+        
+        .hero-description {
+            font-size: 16px;
+            color: rgba(255,255,255,0.75);
+            max-width: 320px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+            opacity: 0;
+            animation: fadeInUp 0.8s 0.4s forwards;
+        }
+        
+        .hero-year {
+            position: absolute;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 999;
-            animation: fadeOut 3s forwards;
-            animation-delay: 2s;
-            display: none;
+            font-size: 5rem;
+            font-weight: 900;
+            color: rgba(157, 119, 77, 0.06);
+            pointer-events: none;
         }
         
-        .swipe-hint.visible {
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            color: var(--primary);
+            font-size: 20px;
+        }
+        
+        /* О компании - светлый с воздухом */
+        .about {
+            background: var(--light);
+            padding: 120px 30px 100px;
+        }
+        
+        .section-header { 
+            margin-bottom: 50px; 
+            text-align: center;
+        }
+        
+        .section-label {
+            color: var(--primary);
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
             display: block;
         }
         
-        @keyframes fadeOut {
-            to { opacity: 0; visibility: hidden; }
+        .section-title {
+            font-size: clamp(1.8rem, 5vw, 2.4rem);
+            color: var(--text-dark);
+            line-height: 1.3;
+            font-weight: 700;
         }
         
-        .contact-bar {
-            position: fixed;
+        .about-text {
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.9;
+            margin-bottom: 50px;
+            text-align: center;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 35px 25px;
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.06);
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+        
+        .stat-number {
+            font-size: 2.4rem;
+            font-weight: 900;
+            color: var(--primary);
+            display: block;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        
+        /* Цвета - светлый с воздухом */
+        .colors {
+            background: white;
+            padding: 120px 30px 100px;
+        }
+        
+        .colors-intro {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 50px;
+            line-height: 1.7;
+        }
+        
+        .colors-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .color-card {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .color-card:hover { transform: scale(1.02); }
+        .color-card:active { transform: scale(0.96); }
+        
+        .color-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .color-info {
+            position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 70px;
+            padding: 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+        }
+        
+        .color-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 3px;
+        }
+        
+        .color-subtitle {
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .colors-footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--secondary);
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Технология - разрез столешницы */
+        .tech {
+            background: var(--gray);
+            padding: 120px 30px 100px;
+        }
+        
+        .tech-intro {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 50px;
+            line-height: 1.7;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .tech-diagram {
+            max-width: 800px;
+            margin: 0 auto;
             background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+        
+        .tech-layers {
             display: flex;
-            justify-content: space-around;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+        
+        .tech-layer {
+            display: flex;
             align-items: center;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
-            padding: 0 10px;
+            padding: 25px 30px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .tech-layer:last-child { border-bottom: none; }
+        
+        .tech-layer:hover {
+            background: rgba(157, 119, 77, 0.03);
+            padding-left: 40px;
+        }
+        
+        .tech-layer-marker {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .tech-layer:nth-child(1) .tech-layer-marker { background: #2c3e50; }
+        .tech-layer:nth-child(2) .tech-layer-marker { background: var(--primary); }
+        .tech-layer:nth-child(3) .tech-layer-marker { background: #95a5a6; }
+        .tech-layer:nth-child(4) .tech-layer-marker { background: #34495e; }
+        
+        .tech-layer-content { flex: 1; }
+        
+        .tech-layer-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+        
+        .tech-layer-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        
+        .tech-layer-thickness {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-left: auto;
+            padding-left: 20px;
+        }
+        
+        .tech-image-container {
+            width: 100%;
+            margin-bottom: 40px;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .tech-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 16px;
+        }
+        
+        /* Формы - светлый с воздухом */
+        .shapes {
+            background: var(--light);
+            padding: 120px 30px 100px;
+        }
+        
+        .shapes-intro {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 50px;
+        }
+        
+        .shapes-image-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+        
+        .shapes-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Модели - светлый с воздухом */
+        .models {
+            background: white;
+            padding: 120px 0 100px;
+        }
+        
+        .models .section-header {
+            padding: 0 30px;
+            margin-bottom: 60px;
+        }
+        
+        .models-slider {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px 30px 40px;
+            scrollbar-width: none;
+        }
+        
+        .models-slider::-webkit-scrollbar { display: none; }
+        
+        .model-card {
+            flex: 0 0 85%;
+            max-width: 340px;
+            background: white;
+            border-radius: 28px;
+            overflow: hidden;
+            scroll-snap-align: center;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+        
+        .model-image {
+            height: 240px;
+            background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .model-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        
+        .model-image:hover img { transform: scale(1.05); }
+        
+        .model-info { padding: 30px; }
+        
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .model-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .model-tag {
+            font-size: 10px;
+            color: var(--primary);
+            background: rgba(157, 119, 77, 0.1);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .model-desc {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .model-sizes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .size-tag {
+            background: rgba(157, 119, 77, 0.08);
+            color: var(--primary);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .model-configs {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        
+        .config-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .config-dots {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .config-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            position: relative;
+            border: 2px solid transparent;
+        }
+        
+        .config-dot.active { border-color: var(--text-dark); }
+        
+        .config-standard { background: #999; }
+        .config-premium { background: var(--secondary); }
+        .config-ultimate { background: var(--primary); }
+        
+        /* Конфигурации - светлый с воздухом */
+        .configs {
+            background: var(--light);
+            padding: 120px 30px 100px;
+        }
+        
+        .configs-intro {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 50px;
+            line-height: 1.7;
+        }
+        
+        .config-list { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 25px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .config-item {
+            background: white;
+            border-radius: 24px;
+            padding: 35px;
+            border: 1px solid rgba(0,0,0,0.06);
+            transition: 0.3s;
+        }
+        
+        .config-item.active {
+            background: rgba(157, 119, 77, 0.06);
+            border-color: var(--primary);
+        }
+        
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .config-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-dark);
+        }
+        
+        .config-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .config-features { list-style: none; }
+        
+        .config-features li {
+            padding: 10px 0;
+            padding-left: 28px;
+            position: relative;
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        
+        .config-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        /* Контакты - светлый с воздухом */
+        .contact {
+            background: var(--gray);
+            text-align: center;
+            padding: 120px 30px 80px;
+        }
+        
+        .contact-intro {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 50px;
+            line-height: 1.7;
+        }
+        
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            max-width: 400px;
+            margin: 0 auto 50px;
+        }
+        
+        .contact-item {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        }
+        
+        .contact-label {
+            color: var(--secondary);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .contact-value {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+        
+        .contact-value a {
+            color: var(--text-dark);
+            text-decoration: none;
+        }
+        
+        .contact-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
         
         .contact-btn {
+            padding: 18px 35px;
+            border-radius: 16px;
+            text-decoration: none;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        
+        .contact-btn:active { transform: scale(0.96); }
+        
+        .btn-phone { background: #27ae60; }
+        .btn-max { background: #6b4ee6; }
+        
+        .tagline {
+            margin-top: 60px;
+            color: var(--secondary);
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        /* Лайтбокс */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .lightbox.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .lightbox-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 85vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #333;
-            font-size: 12px;
-            gap: 5px;
-            padding: 8px 15px;
+        }
+        
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 75vh;
+            object-fit: contain;
             border-radius: 8px;
-            transition: background 0.2s;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: zoomIn 0.3s ease;
         }
         
-        .contact-btn:active {
-            background: #f0f0f0;
+        .lightbox-caption {
+            color: white;
+            margin-top: 20px;
+            font-size: 16px;
+            text-align: center;
+            max-width: 80%;
         }
         
-        .contact-btn svg {
-            width: 28px;
-            height: 28px;
+        .lightbox-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10001;
         }
         
-        .contact-btn.phone svg { fill: #27ae60; }
-        .contact-btn.max svg { fill: #6b4ee6; }
-        .contact-btn.download svg { fill: #e74c3c; }
+        .lightbox-close:hover {
+            background: rgba(255,255,255,0.2);
+            transform: rotate(90deg);
+        }
         
-        @media (max-width: 480px) {
-            .toolbar button {
-                padding: 6px 10px;
-                font-size: 12px;
-            }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10001;
+        }
+        
+        .lightbox-nav:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .lightbox-prev { left: 30px; }
+        .lightbox-next { right: 30px; }
+        
+        .lightbox-counter {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Индикаторы */
+        .page-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        .page-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.15);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        
+        .page-dot.active {
+            background: var(--primary);
+            transform: scale(1.3);
+        }
+        
+        /* Анимации */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+        
+        /* Медиа */
+        @media (min-width: 768px) {
+            .page-dots { display: flex; }
+            .colors-grid { grid-template-columns: repeat(3, 1fr); }
+            .stats { grid-template-columns: repeat(4, 1fr); }
+            .model-card { flex: 0 0 45%; }
             
-            #viewer {
-                padding: 5px;
+            section {
+                padding: 140px 40px 120px;
             }
-            
-            .contact-btn {
-                font-size: 11px;
-                padding: 8px 10px;
-            }
-            
-            .contact-btn svg {
-                width: 24px;
-                height: 24px;
-            }
+        }
+        
+        @media (min-width: 1024px) {
+            .model-card { flex: 0 0 30%; }
+        }
+        
+        /* Loader */
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: 0.5s;
+        }
+        
+        .loader.hidden { opacity: 0; visibility: hidden; }
+        
+        .loader-text {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--primary);
+            animation: pulse 1.5s infinite;
+            letter-spacing: 4px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.95); }
         }
     </style>
 </head>
 <body>
-    <div class="toolbar">
-        <button onclick="prevPage()" id="btn-prev" disabled>◀</button>
-        <span id="page-num">Загрузка...</span>
-        <button onclick="nextPage()" id="btn-next" disabled>▶</button>
-        <button onclick="fitWidth()" id="btn-width" disabled>↔ Ширина</button>
-        <button onclick="fitPage()" id="btn-page" disabled>↕ Страница</button>
+    <!-- Loader -->
+    <div class="loader" id="loader">
+        <div class="loader-text">ПОВЕРХНОСТЬ</div>
     </div>
     
-    <div id="viewer">
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <div>Загрузка каталога...</div>
+    <!-- Лайтбокс -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        <button class="lightbox-nav lightbox-prev" onclick="changeImage(-1)">&#8249;</button>
+        <button class="lightbox-nav lightbox-next" onclick="changeImage(1)">&#8250;</button>
+        <div class="lightbox-content">
+            <img class="lightbox-img" id="lightboxImg" src="" alt="">
+            <div class="lightbox-caption" id="lightboxCaption"></div>
         </div>
-        <div id="page-container"></div>
+        <div class="lightbox-counter" id="lightboxCounter"></div>
     </div>
     
-    <div class="swipe-hint" id="hint">👆 Листайте влево/вправо</div>
+    <!-- Навигация -->
+    <nav class="nav">
+        <div class="nav-logo">ПОВЕРХНОСТЬ</div>
+        <div class="nav-menu-btn" id="menuBtn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
     
-    <div class="contact-bar">
-        <a href="tel:+79029786302" class="contact-btn phone">
-            <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-            <span>Позвонить</span>
-        </a>
-        
-        <a href="https://max.ru/u/f9LHodD0cOJf3kkkt5dMntez-ZvEKQ5bZ6oC9EbxYuW61STx-ngHvdDB08A?text=Привет!%20мне%20нужен%20расчёт%20стоимости" target="_blank" class="contact-btn max">
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-            <span>Написать в MAX</span>
-        </a>
-        
-        <a href="catalog22_03_26.pdf" download class="contact-btn download">
-            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-            <span>Скачать PDF</span>
-        </a>
+    <div class="overlay" id="overlay"></div>
+    <div class="nav-menu" id="navMenu">
+        <a href="#hero">Главная</a>
+        <a href="#about">О мануфактуре</a>
+        <a href="#colors">Палитра</a>
+        <a href="#tech">Технология</a>
+        <a href="#shapes">Формы</a>
+        <a href="#models">Модели</a>
+        <a href="#configs">Комплектации</a>
+        <a href="#contact">Контакты</a>
     </div>
+    
+    <!-- Индикаторы -->
+    <div class="page-dots" id="pageDots">
+        <div class="page-dot active" data-section="hero"></div>
+        <div class="page-dot" data-section="about"></div>
+        <div class="page-dot" data-section="colors"></div>
+        <div class="page-dot" data-section="tech"></div>
+        <div class="page-dot" data-section="shapes"></div>
+        <div class="page-dot" data-section="models"></div>
+        <div class="page-dot" data-section="configs"></div>
+        <div class="page-dot" data-section="contact"></div>
+    </div>
+    
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <div class="hero-content">
+            <div class="hero-subtitle">Красноярская сибирская мануфактура</div>
+            <h1 class="hero-title">Обеденные<br>столы</h1>
+            <p class="hero-description">Из спеченного камня.<br>Одна поверхность — множество решений.</p>
+        </div>
+        <div class="hero-year">2026</div>
+        <div class="scroll-hint">↓</div>
+    </section>
+    
+    <!-- О компании -->
+    <section class="about" id="about">
+        <div class="section-header">
+            <span class="section-label">О нас</span>
+            <h2 class="section-title">Наследие и<br>технологии</h2>
+        </div>
+        <p class="about-text">
+            Наша история началась в 2008 году. За годы развития «Кафель Гранит 124» прошёл путь от мастерской до высокотехнологичной мануфактуры. Проект «Поверхность» — это ответ на запрос о надёжной и эстетичной мебели.
+        </p>
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number">124K+</span>
+                <span class="stat-label">Изделий передано клиенту</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">17</span>
+                <span class="stat-label">Лет опыта</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">600</span>
+                <span class="stat-label">м² производство</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">13</span>
+                <span class="stat-label">Моделей</span>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Цвета с реальными фото -->
+    <section class="colors" id="colors">
+        <div class="section-header">
+            <span class="section-label">Палитра</span>
+            <h2 class="section-title">Текстуры<br>камня</h2>
+        </div>
+        <p class="colors-intro">
+            22 текстуры спеченного камня.<br>Каждая уникальна и неповторима.
+        </p>
+        <div class="colors-grid">
+            <div class="color-card" onclick="openLightbox(0)">
+                <img src="https://delfone.ru/image/P/PANDORA--Treasure_18035_6_7.jpg" class="color-image" alt="Pandora" data-caption="PANDORA Treasure — глубокий чёрный с золотистыми прожилками">
+                <div class="color-info">
+                    <div class="color-name">PANDORA</div>
+                    <div class="color-subtitle">Treasure</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(1)">
+                <img src="https://delfone.ru/image/C/COLUMBIA-EMERALD--Treasure_18023_6_7.jpg" class="color-image" alt="Columbia Emerald" data-caption="COLUMBIA Emerald — изумрудный мраморный узор">
+                <div class="color-info">
+                    <div class="color-name">COLUMBIA</div>
+                    <div class="color-subtitle">Emerald</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(2)">
+                <img src="https://delfone.ru/image/V/VERSACE-SENIOR-BLACK--Treasure_18083_6_7.jpg" class="color-image" alt="Versace Senior Black" data-caption="VERSACE Senior Black — элегантный чёрный с белыми прожилками">
+                <div class="color-info">
+                    <div class="color-name">VERSACE</div>
+                    <div class="color-subtitle">Senior Black</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(3)">
+                <img src="https://delfone.ru/image/A/AMBILIGHT--Treasure_18098_6_7.jpg" class="color-image" alt="Ambilight" data-caption="AMBILIGHT — светлый мрамор с дымчатым эффектом">
+                <div class="color-info">
+                    <div class="color-name">AMBILIGHT</div>
+                    <div class="color-subtitle">Treasure</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(4)">
+                <img src="https://delfone.ru/image/M/MARTHA-BROWN--Titanium_18242_6_7.jpg" class="color-image" alt="Martha Brown" data-caption="MARTHA Brown — тёплый коричневый с текстурой дерева">
+                <div class="color-info">
+                    <div class="color-name">MARTHA</div>
+                    <div class="color-subtitle">Brown</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(5)">
+                <img src="https://delfone.ru/image/T/TITANIUM-SILVERY-GREY--Titanium_18218_6_7.jpg" class="color-image" alt="Titanium Silvery Grey" data-caption="TITANIUM Silvery Grey — металлический серебристый оттенок">
+                <div class="color-info">
+                    <div class="color-name">TITANIUM</div>
+                    <div class="color-subtitle">Silvery Grey</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(6)">
+                <img src="https://delfone.ru/image/A/ARARAT-LIGHTNING-BLACK--Diamond_18114_6_7.jpg" class="color-image" alt="Ararat Lightning Black" data-caption="ARARAT Lightning Black — драматичный чёрный с молниями">
+                <div class="color-info">
+                    <div class="color-name">ARARAT</div>
+                    <div class="color-subtitle">Lightning Black</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(7)">
+                <img src="https://delfone.ru/image/R/ROMAN-NIELLO--Diamond_18118_6_7.jpg" class="color-image" alt="Roman Niello" data-caption="ROMAN Niello — классический чёрный с серебром">
+                <div class="color-info">
+                    <div class="color-name">ROMAN</div>
+                    <div class="color-subtitle">Niello</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(8)">
+                <img src="https://delfone.ru/image/S/SUPER-ARABESCATO-CORCHIA--Diamond_18106_6_7.jpg" class="color-image" alt="Super Arabescato Corchia" data-caption="ARABESCATO Corchia — итальянский мраморный узор">
+                <div class="color-info">
+                    <div class="color-name">ARABESCATO</div>
+                    <div class="color-subtitle">Corchia</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(9)">
+                <img src="https://delfone.ru/image/S/SHAKESPEARE-SENIOR-GREY--Diamond_18134_6_7.jpg" class="color-image" alt="Shakespeare Senior Grey" data-caption="SHAKESPEARE Senior Grey — графитовый с драматичным рисунком">
+                <div class="color-info">
+                    <div class="color-name">SHAKESPEARE</div>
+                    <div class="color-subtitle">Senior Grey</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(10)">
+                <img src="https://delfone.ru/image/B/BLACK-AURORA--Diamond_18150_6_7.jpg" class="color-image" alt="Black Aurora" data-caption="BLACK Aurora — глубокий чёрный с северным сиянием">
+                <div class="color-info">
+                    <div class="color-name">BLACK</div>
+                    <div class="color-subtitle">Aurora</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="openLightbox(11)">
+                <img src="https://delfone.ru/image/G/GILT-YEARS--Classic-Marble_17927_6_7.jpg" class="color-image" alt="Gilt Years" data-caption="GILT Years — золотистый мрамор вековой давности">
+                <div class="color-info">
+                    <div class="color-name">GILT</div>
+                    <div class="color-subtitle">Years</div>
+                </div>
+            </div>
+        </div>
+        <p class="colors-footer">+ Ещё 10 текстур в полном каталоге</p>
+    </section>
+    
+    <!-- Технология - разрез столешницы -->
+    <section class="tech" id="tech">
+        <div class="section-header">
+            <span class="section-label">Технология</span>
+            <h2 class="section-title">Состав<br>столешницы</h2>
+        </div>
+        <p class="tech-intro">
+            Многослойная конструкция обеспечивает максимальную прочность и долговечность. Каждый слой выполняет свою функцию.
+        </p>
+        <div class="tech-diagram">
+            <!-- Изображение разреза -->
+            <div class="tech-image-container" onclick="openLightbox(12)">
+                <img src="https://i.ibb.co/LLcDf0H/14.png" class="tech-image" alt="Технический разрез столешницы" data-caption="Технический разрез столешницы — схема слоёв">
+            </div>
+            
+            <div class="tech-layers">
+                <div class="tech-layer">
+                    <div class="tech-layer-marker"></div>
+                    <div class="tech-layer-content">
+                        <div class="tech-layer-title">Защитный слой</div>
+                        <div class="tech-layer-desc">Спеченный камень премиум-класса. Устойчив к царапинам, температуре и химическим воздействиям.</div>
+                    </div>
+                    <div class="tech-layer-thickness">3-12 мм</div>
+                </div>
+                <div class="tech-layer">
+                    <div class="tech-layer-marker"></div>
+                    <div class="tech-layer-content">
+                        <div class="tech-layer-title">Клеевой слой</div>
+                        <div class="tech-layer-desc">Эластичный полимерный компаунд. Гасит вибрации и компенсирует температурное расширение.</div>
+                    </div>
+                    <div class="tech-layer-thickness">1-2 мм</div>
+                </div>
+                <div class="tech-layer">
+                    <div class="tech-layer-marker"></div>
+                    <div class="tech-layer-content">
+                        <div class="tech-layer-title">Основа МДФ/стекло</div>
+                        <div class="tech-layer-desc">Влагостойкая МДФ-плита или калёное стекло. Обеспечивает плоскостность и жёсткость конструкции.</div>
+                    </div>
+                    <div class="tech-layer-thickness">8-10 мм</div>
+                </div>
+                <div class="tech-layer">
+                    <div class="tech-layer-marker"></div>
+                    <div class="tech-layer-content">
+                        <div class="tech-layer-title">Усилитель</div>
+                        <div class="tech-layer-desc">Алюминиевая сотовая или фрезерованная структура. Распределяет нагрузку по всей плоскости.</div>
+                    </div>
+                    <div class="tech-layer-thickness">20-40 мм</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Формы -->
+    <section class="shapes" id="shapes">
+        <div class="section-header">
+            <span class="section-label">Геометрия</span>
+            <h2 class="section-title">Формы<br>столешниц</h2>
+        </div>
+        <p class="shapes-intro">
+            4 базовые формы для любого интерьера.<br>Возможны индивидуальные размеры.
+        </p>
+        <div class="shapes-image-container" onclick="openLightbox(26)">
+            <img src="https://i.ibb.co/pBpCsQ8B/2026-03-29-19-48-18.png" class="shapes-image" alt="Формы столешниц" data-caption="Формы столешниц: Круг, Эллипс, R-прямоугольник, Овальный прямоугольник">
+        </div>
+    </section>
+    
+    <!-- Модели с реальными фото -->
+    <section class="models" id="models">
+        <div class="section-header">
+            <span class="section-label">Коллекция</span>
+            <h2 class="section-title">13 моделей<br>столов</h2>
+        </div>
+        <div class="models-slider">
+            <!-- 1. Енисей -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(13)">
+                    <img src="https://i.ibb.co/JRwv0TQF/1766750274375.png" alt="Енисей" data-caption="Стол Енисей — стальное основание 6 мм, X-образная опора">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Енисей</h3>
+                        <span class="model-tag">Лаконичность</span>
+                    </div>
+                    <p class="model-desc">Стальное основание 6 мм. X-образная опора.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1600×800</span>
+                        <span class="size-tag">2000×950</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 2. Бирюса -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(14)">
+                    <img src="https://i.ibb.co/xtCLKjXb/1766752031615.png" alt="Бирюса" data-caption="Стол Бирюса — радиусные опоры из МДФ, цилиндрическое подстолье">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Бирюса</h3>
+                        <span class="model-tag">Элегантность</span>
+                    </div>
+                    <p class="model-desc">Радиусные опоры из МДФ. Цилиндрическое подстолье.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1600×800</span>
+                        <span class="size-tag">1800×900</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 3. Обь -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(15)">
+                    <img src="https://i.ibb.co/Xxckk9Gg/trashed-1769343557-1766750665022.png" alt="Обь" data-caption="Стол Обь — круг на цилиндрическом рифлёном подстолье">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Обь</h3>
+                        <span class="model-tag">Гармония</span>
+                    </div>
+                    <p class="model-desc">Круг на цилиндрическом рифлёном подстолье.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">D 1000</span>
+                        <span class="size-tag">D 1200</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 4. Лена -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(16)">
+                    <img src="https://i.ibb.co/v6fwg7MY/1766750357776.png" alt="Лена" data-caption="Стол Лена — стальной профиль 40×80 мм, массивная опора">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Лена</h3>
+                        <span class="model-tag">Характер</span>
+                    </div>
+                    <p class="model-desc">Стальной профиль 40×80 мм. Массивная опора.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1600×800</span>
+                        <span class="size-tag">2000×1000</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 5. Катунь -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(17)">
+                    <img src="https://i.ibb.co/qFnvzzH4/1766751509816.png" alt="Катунь" data-caption="Стол Катунь — сложное переплетение, двойная опора">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Катунь</h3>
+                        <span class="model-tag">Архитектура</span>
+                    </div>
+                    <p class="model-desc">Сложное переплетение. Двойная опора.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1800×900</span>
+                        <span class="size-tag">2200×1000</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 6. Тунгуска -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(18)">
+                    <img src="https://i.ibb.co/xtRyXHcw/1766749830510.png" alt="Тунгуска" data-caption="Стол Тунгуска — лёгкая и прочная, двойное рифлёное подстолье">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Тунгуска</h3>
+                        <span class="model-tag">Минимализм</span>
+                    </div>
+                    <p class="model-desc">Лёгкая и прочная. Двойное рифлёное подстолье.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1400×800</span>
+                        <span class="size-tag">1600×800</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 7. Иртыш -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(19)">
+                    <img src="https://i.ibb.co/vxp2jCDh/1764734562282.png" alt="Иртыш" data-caption="Стол Иртыш — форма Soft Rectangle, изогнутая опора">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Иртыш</h3>
+                        <span class="model-tag">Плавность</span>
+                    </div>
+                    <p class="model-desc">Форма Soft Rectangle. Изогнутая опора.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1800×900</span>
+                        <span class="size-tag">2000×950</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 8. Амур -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(20)">
+                    <img src="https://i.ibb.co/NdbPLWDF/1766749360879.png" alt="Амур" data-caption="Стол Амур — эффект парения, U-образная опора">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Амур</h3>
+                        <span class="model-tag">Воздух</span>
+                    </div>
+                    <p class="model-desc">Эффект парения. U-образная опора.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1600×800</span>
+                        <span class="size-tag">1800×900</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 9. Мана -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(21)">
+                    <img src="https://i.ibb.co/Rk0G6rRp/1766751192867.png" alt="Мана" data-caption="Стол Мана — статус и архитектурные формы, двойная колонна">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Мана</h3>
+                        <span class="model-tag">Монолит</span>
+                    </div>
+                    <p class="model-desc">Статус и архитектурные формы. Двойная колонна.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">2000×1000</span>
+                        <span class="size-tag">2400×1100</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 10. Баргузин -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(22)">
+                    <img src="https://i.ibb.co/7tSbvzmr/1000286851.png" alt="Баргузин" data-caption="Стол Баргузин — универсальный прямоугольник, дугообразные опоры">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Баргузин</h3>
+                        <span class="model-tag">Баланс</span>
+                    </div>
+                    <p class="model-desc">Универсальный прямоугольник. Дугообразные опоры.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1500×1500</span>
+                        <span class="size-tag">1800×900</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 11. Байкал -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(23)">
+                    <img src="https://i.ibb.co/fzFMbfPB/1766751246152.png" alt="Байкал" data-caption="Стол Байкал — синтез дерева и камня, фигурные ножки">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Байкал</h3>
+                        <span class="model-tag">Модерн</span>
+                    </div>
+                    <p class="model-desc">Синтез дерева и камня. Фигурные ножки.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1600×900</span>
+                        <span class="size-tag">2000×1000</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 12. Ангара -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(24)">
+                    <img src="https://i.ibb.co/x8tLS6nf/1764502015233.png" alt="Ангара" data-caption="Стол Ангара — для глубоких тёмных текстур, V-образная опора">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Ангара</h3>
+                        <span class="model-tag">Эстетика</span>
+                    </div>
+                    <p class="model-desc">Для глубоких тёмных текстур. V-образная опора.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1400×800</span>
+                        <span class="size-tag">1600×800</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 13. Бия -->
+            <div class="model-card">
+                <div class="model-image" onclick="openLightbox(25)">
+                    <img src="https://i.ibb.co/RdkGgwd/1766749687363.png" alt="Бия" data-caption="Стол Бия — базовая модель, надёжная трапециевидная опора">
+                </div>
+                <div class="model-info">
+                    <div class="model-header">
+                        <h3 class="model-name">Бия</h3>
+                        <span class="model-tag">Функционал</span>
+                    </div>
+                    <p class="model-desc">Базовая модель. Надёжная трапециевидная опора.</p>
+                    <div class="model-sizes">
+                        <span class="size-tag">1400×800</span>
+                        <span class="size-tag">1600×800</span>
+                    </div>
+                    <div class="model-configs">
+                        <span class="config-label">Комплектации:</span>
+                        <div class="config-dots">
+                            <div class="config-dot config-standard"></div>
+                            <div class="config-dot config-premium"></div>
+                            <div class="config-dot config-ultimate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Конфигурации -->
+    <section class="configs" id="configs">
+        <div class="section-header">
+            <span class="section-label">Комплектации</span>
+            <h2 class="section-title">Три уровня<br>исполнения</h2>
+        </div>
+        <p class="configs-intro">
+            Выберите оптимальное сочетание цены и качества.<br>От базового до премиального сегмента.
+        </p>
+        <div class="config-list">
+            <div class="config-item">
+                <div class="config-header">
+                    <h3 class="config-title">STANDARD</h3>
+                    <span class="config-badge">Базовый</span>
+                </div>
+                <ul class="config-features">
+                    <li>Спеченный камень 3/6 мм</li>
+                    <li>Усиленная МДФ-подложка</li>
+                    <li>Торец под 45°</li>
+                    <li>Оптимальное сочетание веса и прочности</li>
+                </ul>
+            </div>
+            
+            <div class="config-item active">
+                <div class="config-header">
+                    <h3 class="config-title">PREMIUM</h3>
+                    <span class="config-badge">Популярный</span>
+                </div>
+                <ul class="config-features">
+                    <li>Монолитный камень 12 мм</li>
+                    <li>Скрытая фрезеровка МДФ</li>
+                    <li>Безупречный стык и монолитность</li>
+                    <li>Гарантия 2 года</li>
+                </ul>
+            </div>
+            
+            <div class="config-item">
+                <div class="config-header">
+                    <h3 class="config-title">ULTIMATE</h3>
+                    <span class="config-badge">Максимум</span>
+                </div>
+                <ul class="config-features">
+                    <li>Композит: камень + 10 мм каленое стекло</li>
+                    <li>Керамический стабилизатор</li>
+                    <li>Максимальная прочность</li>
+                    <li>Гарантия 5 лет</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Контакты -->
+    <section class="contact" id="contact">
+        <div class="section-header">
+            <span class="section-label">Связаться</span>
+            <h2 class="section-title">Приглашаем к<br>сотрудничеству</h2>
+        </div>
+        <p class="contact-intro">
+            Готовы ответить на все вопросы и помочь<br>с выбором идеального стола.
+        </p>
+        <div class="contact-info">
+            <div class="contact-item">
+                <div class="contact-label">Адрес</div>
+                <div class="contact-value">г. Красноярск</div>
+            </div>
+            <div class="contact-item">
+                <div class="contact-label">Телефон</div>
+                <div class="contact-value">
+                    <a href="tel:+79080169053">+7 (908) 016-90-53</a>
+                </div>
+            </div>
+        </div>
+        <div class="contact-buttons">
+            <a href="tel:+79080169053" class="contact-btn btn-phone">📞 Позвонить</a>
+            <a href="https://max.ru/u/f9LHodD0cOJf3kkkt5dMntez-ZvEKQ5bZ6oC9EbxYuW61STx-ngHvdDB08A?text=Привет!%20мне%20нужен%20расчёт%20стоимости" target="_blank" class="contact-btn btn-max">💬 Написать в MAX</a>
+        </div>
+        <p class="tagline">ПОВЕРХНОСТЬ — ВАША УВЕРЕННОСТЬ В КАЖДОЙ ДЕТАЛИ</p>
+    </section>
 
     <script>
-        if (typeof pdfjsLib === 'undefined') {
-            document.getElementById('loading').innerHTML = 
-                '<div class="error">Ошибка загрузки библиотеки<br><a href="catalog22_03_26.pdf">Открыть PDF напрямую</a></div>';
-            throw new Error('PDF.js не загружен');
-        }
-        
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        
-        const url = 'catalog22_03_26.pdf';
-        
-        let pdfDoc = null;
-        let currentPage = 1;
-        let totalPages = 0;
-        let cssScale = 1; // Масштаб для отображения (CSS)
-        let pdfScale = 1; // Масштаб для PDF.js (с учетом DPR)
-        let pageWidth = 0;
-        let pageHeight = 0;
-        let isLoading = true;
+        // Массив всех изображений для лайтбокса
+        const galleryImages = [
+            // Цвета камня (0-11)
+            { src: "https://delfone.ru/image/P/PANDORA--Treasure_18035_6_7.jpg", caption: "PANDORA Treasure — глубокий чёрный с золотистыми прожилками" },
+            { src: "https://delfone.ru/image/C/COLUMBIA-EMERALD--Treasure_18023_6_7.jpg", caption: "COLUMBIA Emerald — изумрудный мраморный узор" },
+            { src: "https://delfone.ru/image/V/VERSACE-SENIOR-BLACK--Treasure_18083_6_7.jpg", caption: "VERSACE Senior Black — элегантный чёрный с белыми прожилками" },
+            { src: "https://delfone.ru/image/A/AMBILIGHT--Treasure_18098_6_7.jpg", caption: "AMBILIGHT — светлый мрамор с дымчатым эффектом" },
+                        { src: "https://delfone.ru/image/M/MARTHA-BROWN--Titanium_18242_6_7.jpg", caption: "MARTHA Brown — тёплый коричневый с текстурой дерева" },
+            { src: "https://delfone.ru/image/T/TITANIUM-SILVERY-GREY--Titanium_18218_6_7.jpg", caption: "TITANIUM Silvery Grey — металлический серебристый оттенок" },
+            { src: "https://delfone.ru/image/A/ARARAT-LIGHTNING-BLACK--Diamond_18114_6_7.jpg", caption: "ARARAT Lightning Black — драматичный чёрный с молниями" },
+            { src: "https://delfone.ru/image/R/ROMAN-NIELLO--Diamond_18118_6_7.jpg", caption: "ROMAN Niello — классический чёрный с серебром" },
+            { src: "https://delfone.ru/image/S/SUPER-ARABESCATO-CORCHIA--Diamond_18106_6_7.jpg", caption: "ARABESCATO Corchia — итальянский мраморный узор" },
+            { src: "https://delfone.ru/image/S/SHAKESPEARE-SENIOR-GREY--Diamond_18134_6_7.jpg", caption: "SHAKESPEARE Senior Grey — графитовый с драматичным рисунком" },
+            { src: "https://delfone.ru/image/B/BLACK-AURORA--Diamond_18150_6_7.jpg", caption: "BLACK Aurora — глубокий чёрный с северным сиянием" },
+            { src: "https://delfone.ru/image/G/GILT-YEARS--Classic-Marble_17927_6_7.jpg", caption: "GILT Years — золотистый мрамор вековой давности" },
+            // Технический разрез (12)
+            { src: "https://i.ibb.co/LLcDf0H/14.png", caption: "Технический разрез столешницы — схема слоёв" },
+            // Модели столов (13-25)
+            { src: "https://i.ibb.co/JRwv0TQF/1766750274375.png", caption: "Стол Енисей — стальное основание 6 мм, X-образная опора" },
+            { src: "https://i.ibb.co/xtCLKjXb/1766752031615.png", caption: "Стол Бирюса — радиусные опоры из МДФ, цилиндрическое подстолье" },
+            { src: "https://i.ibb.co/Xxckk9Gg/trashed-1769343557-1766750665022.png", caption: "Стол Обь — круг на цилиндрическом рифлёном подстолье" },
+            { src: "https://i.ibb.co/v6fwg7MY/1766750357776.png", caption: "Стол Лена — стальной профиль 40×80 мм, массивная опора" },
+            { src: "https://i.ibb.co/qFnvzzH4/1766751509816.png", caption: "Стол Катунь — сложное переплетение, двойная опора" },
+            { src: "https://i.ibb.co/xtRyXHcw/1766749830510.png", caption: "Стол Тунгуска — лёгкая и прочная, двойное рифлёное подстолье" },
+            { src: "https://i.ibb.co/vxp2jCDh/1764734562282.png", caption: "Стол Иртыш — форма Soft Rectangle, изогнутая опора" },
+            { src: "https://i.ibb.co/NdbPLWDF/1766749360879.png", caption: "Стол Амур — эффект парения, U-образная опора" },
+            { src: "https://i.ibb.co/Rk0G6rRp/1766751192867.png", caption: "Стол Мана — статус и архитектурные формы, двойная колонна" },
+            { src: "https://i.ibb.co/7tSbvzmr/1000286851.png", caption: "Стол Баргузин — универсальный прямоугольник, дугообразные опоры" },
+            { src: "https://i.ibb.co/fzFMbfPB/1766751246152.png", caption: "Стол Байкал — синтез дерева и камня, фигурные ножки" },
+            { src: "https://i.ibb.co/x8tLS6nf/1764502015233.png", caption: "Стол Ангара — для глубоких тёмных текстур, V-образная опора" },
+            { src: "https://i.ibb.co/RdkGgwd/1766749687363.png", caption: "Стол Бия — базовая модель, надёжная трапециевидная опора" },
+            // Формы столешниц (26)
+            { src: "https://i.ibb.co/pBpCsQ8B/2026-03-29-19-48-18.png", caption: "Формы столешниц: Круг, Эллипс, R-прямоугольник, Овальный прямоугольник" }
+        ];
 
-        const loadingTimeout = setTimeout(function() {
-            if (isLoading) {
-                document.getElementById('loading').innerHTML = 
-                    '<div class="error">Загрузка занимает слишком много времени<br><a href="catalog22_03_26.pdf">Открыть PDF напрямую</a></div>';
-            }
-        }, 15000);
+        let currentImageIndex = 0;
 
-        const loadingTask = pdfjsLib.getDocument(url);
-        
-        loadingTask.promise.then(function(pdf) {
-            clearTimeout(loadingTimeout);
-            isLoading = false;
-            
-            pdfDoc = pdf;
-            totalPages = pdf.numPages;
-            
-            return pdf.getPage(1);
-            
-        }).then(function(page) {
-            const viewport = page.getViewport({ scale: 1 });
-            pageWidth = viewport.width;
-            pageHeight = viewport.height;
-            
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('page-container').classList.add('loaded');
-            document.getElementById('hint').classList.add('visible');
-            
-            document.getElementById('btn-prev').disabled = false;
-            document.getElementById('btn-next').disabled = false;
-            document.getElementById('btn-width').disabled = false;
-            document.getElementById('btn-page').disabled = false;
-            
-            fitWidth();
-            
-        }).catch(function(error) {
-            clearTimeout(loadingTimeout);
-            isLoading = false;
-            
-            console.error('Ошибка загрузки PDF:', error);
-            
-            let errorMsg = 'Ошибка загрузки каталога';
-            if (error.name === 'MissingPDFException') {
-                errorMsg = 'Файл не найден. Проверьте имя файла.';
-            } else if (error.name === 'InvalidPDFException') {
-                errorMsg = 'Файл поврежден или не является PDF';
-            } else if (error.message && error.message.includes('network')) {
-                errorMsg = 'Ошибка сети. Проверьте интернет-соединение';
-            }
-            
-            document.getElementById('loading').innerHTML = 
-                '<div class="error">' + errorMsg + '<br><br><a href="' + url + '">Попробовать открыть напрямую</a><br><br><small>' + error.message + '</small></div>';
+        // Loader
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+            }, 800);
         });
-
-        function fitWidth() {
-            if (!pdfDoc) return;
-            
-            const dpr = window.devicePixelRatio || 1;
-            const viewerWidth = document.getElementById('viewer').clientWidth - 20;
-            
-            // CSS масштаб — сколько пикселей на экране
-            cssScale = viewerWidth / pageWidth;
-            
-            // PDF масштаб — с учетом DPR для четкости
-            pdfScale = cssScale * dpr;
-            
-            renderPage(currentPage);
+        
+        // Меню
+        const menuBtn = document.getElementById('menuBtn');
+        const navMenu = document.getElementById('navMenu');
+        const overlay = document.getElementById('overlay');
+        
+        function toggleMenu() {
+            menuBtn.classList.toggle('active');
+            navMenu.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
         }
-
-        function fitPage() {
-            if (!pdfDoc) return;
-            
-            const dpr = window.devicePixelRatio || 1;
-            const viewerHeight = document.getElementById('viewer').clientHeight - 20;
-            
-            cssScale = viewerHeight / pageHeight;
-            pdfScale = cssScale * dpr;
-            
-            renderPage(currentPage);
-        }
-
-        function renderPage(num) {
-            if (!pdfDoc) return;
-            
-            pdfDoc.getPage(num).then(function(page) {
-                // Viewport с масштабом для рендеринга (высокий DPR)
-                const viewport = page.getViewport({ scale: pdfScale });
-                
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Физические пиксели — высокое разрешение для четкости
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
-                
-                // CSS пиксели — отображаемый размер (делим на DPR)
-                const dpr = window.devicePixelRatio || 1;
-                canvas.style.width = (viewport.width / dpr) + 'px';
-                canvas.style.height = (viewport.height / dpr) + 'px';
-                
-                // Включаем качественное сглаживание
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
-                
-                const renderTask = page.render({
-                    canvasContext: ctx,
-                    viewport: viewport
-                });
-                
-                renderTask.promise.then(function() {
-                    const container = document.getElementById('page-container');
-                    container.innerHTML = '';
-                    container.appendChild(canvas);
-                    
-                    document.getElementById('page-num').textContent = 
-                        num + ' / ' + totalPages;
-                    
-                    document.getElementById('btn-prev').disabled = (num <= 1);
-                    document.getElementById('btn-next').disabled = (num >= totalPages);
-                }).catch(function(error) {
-                    console.error('Ошибка рендеринга:', error);
-                });
+        
+        menuBtn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+        
+        // Навигация
+        document.querySelectorAll('.nav-menu a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(link.getAttribute('href'));
+                toggleMenu();
+                setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 300);
             });
-        }
-
-        function prevPage() {
-            if (currentPage <= 1 || !pdfDoc) return;
-            currentPage--;
-            renderPage(currentPage);
-            hideHint();
-        }
-
-        function nextPage() {
-            if (currentPage >= totalPages || !pdfDoc) return;
-            currentPage++;
-            renderPage(currentPage);
-            hideHint();
-        }
-
-        function hideHint() {
-            const hint = document.getElementById('hint');
-            if (hint) hint.style.display = 'none';
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowLeft') prevPage();
-            if (e.key === 'ArrowRight') nextPage();
         });
-
+        
+        // Индикаторы секций
+        const sections = document.querySelectorAll('section');
+        const dots = document.querySelectorAll('.page-dot');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    dots.forEach(dot => {
+                        dot.classList.toggle('active', dot.dataset.section === id);
+                    });
+                }
+            });
+        }, { threshold: 0.5 });
+        
+        sections.forEach(section => observer.observe(section));
+        
+        // Клик по точкам
+        dots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                document.getElementById(dot.dataset.section).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+        
+        // Лайтбокс функции
+        function openLightbox(index) {
+            currentImageIndex = index;
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightboxImg');
+            const caption = document.getElementById('lightboxCaption');
+            const counter = document.getElementById('lightboxCounter');
+            
+            const imageData = galleryImages[index];
+            
+            if (imageData.src) {
+                img.src = imageData.src;
+                img.style.display = 'block';
+            } else {
+                img.style.display = 'none';
+            }
+            
+            caption.textContent = imageData.caption;
+            counter.textContent = `${index + 1} / ${galleryImages.length}`;
+            
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        function changeImage(direction) {
+            currentImageIndex += direction;
+            
+            if (currentImageIndex < 0) {
+                currentImageIndex = galleryImages.length - 1;
+            } else if (currentImageIndex >= galleryImages.length) {
+                currentImageIndex = 0;
+            }
+            
+            openLightbox(currentImageIndex);
+        }
+        
+        // Закрытие по клику вне изображения
+        document.getElementById('lightbox').addEventListener('click', (e) => {
+            if (e.target.id === 'lightbox') {
+                closeLightbox();
+            }
+        });
+        
+        // Клавиатурная навигация
+        document.addEventListener('keydown', (e) => {
+            const lightbox = document.getElementById('lightbox');
+            if (!lightbox.classList.contains('active')) return;
+            
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') changeImage(-1);
+            if (e.key === 'ArrowRight') changeImage(1);
+        });
+        
+        // Свайп для лайтбокса
         let touchStartX = 0;
-        let touchStartY = 0;
-
-        document.addEventListener('touchstart', function(e) {
-            touchStartX = e.touches[0].screenX;
-            touchStartY = e.touches[0].screenY;
-        }, { passive: true });
-
-        document.addEventListener('touchend', function(e) {
-            const touchEndX = e.changedTouches[0].screenX;
-            const touchEndY = e.changedTouches[0].screenY;
+        let touchEndX = 0;
+        
+        const lightbox = document.getElementById('lightbox');
+        
+        lightbox.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, {passive: true});
+        
+        lightbox.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, {passive: true});
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
             
-            const deltaX = touchStartX - touchEndX;
-            const deltaY = touchStartY - touchEndY;
-            
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-                if (deltaX > 50) {
-                    nextPage();
-                } else if (deltaX < -50) {
-                    prevPage();
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    changeImage(1);
+                } else {
+                    changeImage(-1);
                 }
             }
-        }, { passive: true });
-
-        window.addEventListener('orientationchange', function() {
-            if (pdfDoc) {
-                setTimeout(fitWidth, 300);
-            }
+        }
+        
+        // Свайп для слайдера моделей
+        const slider = document.querySelector('.models-slider');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
         });
+        
+        slider.addEventListener('mouseleave', () => isDown = false);
+        slider.addEventListener('mouseup', () => isDown = false);
+        
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+        
+        // Touch для слайдера
+        slider.addEventListener('touchstart', (e) => {
+            isDown = true;
+            startX = e.touches[0].pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        }, {passive: true});
+        
+        slider.addEventListener('touchend', () => isDown = false);
+        
+        slider.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            const x = e.touches[0].pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2;
+            slider.scrollLeft = scrollLeft - walk;
+        }, {passive: true});
     </script>
 </body>
 </html>
